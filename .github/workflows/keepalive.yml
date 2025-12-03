@@ -1,0 +1,15 @@
+name: Keep Render Awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # Runs every 13 minutes
+  workflow_dispatch:         # Allows manual run
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Curl ping to keep the service awake
+        run: |
+          curl -I --max-time 10 https://polyours.co.kr || true
