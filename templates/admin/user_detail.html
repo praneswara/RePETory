@@ -1,0 +1,319 @@
+{% extends "admin/base.html" %}
+{% block title %}User Detail{% endblock %}
+
+{% block content %}
+
+<style>
+.table tbody tr.table-success td{
+    background-color: #5da5d8 !important;
+    color: rgb(0, 0, 0) !important;
+    border: 2px solid black !important;
+    text-align: center;
+}
+.table tbody tr.table-danger td{
+    background-color: #ffffff !important;
+    color: rgb(0, 0, 0) !important;
+    border: 2px solid black !important;
+    text-align: center;
+}
+.table-header thead th{
+    background-color:#ffffff!important;
+    color: rgb(0, 0, 0);
+    border: 2px solid black !important;
+    text-align: center;
+}
+.table{
+    border: 2px solid black !important;
+}
+.text{
+    color:#ffffff !important;
+    font-size: 35px;
+}
+.name-card{
+    display: flex;
+    justify-content:space-between;
+}
+@media(max-width:700px){
+  .empty { height:300px; width:300px; }
+}
+.card-title{
+    padding-top: 0; 
+    background-color:#2373EC;
+}
+.form-control{
+  border: 2px solid black !important;
+  width:70% ;
+  height:60% ;
+}
+.form-control:hover{
+   border: 2px solid #2373EC !important;
+}
+
+  .small-download-btn .front {
+        padding: 8px 20px;
+        font-size: 0.9rem;
+        display: block;
+        letter-spacing: 1px;
+        gap: 6px;
+    }
+
+    .small-download-btn img {
+        width: 30px;
+        height: 25px;
+    }
+
+.pushable {
+  position: relative;
+  background: transparent;
+  padding: 0px;
+  border: none;
+  cursor: pointer;
+  outline-offset: 4px;
+  outline-color: #2373EC;
+  transition: filter 250ms;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.shadow-button {
+  position: absolute;
+  inset: 0;
+  background: #86b6ff;
+  border-radius: 8px;
+  filter: blur(2px);
+  transform: translateY(2px);
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.edge {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(
+    to right,
+    #1f5ac1 0%,
+    #2373ec 8%,
+    #2373ec 92%,
+    #1c4ea3 100%
+  );
+}
+
+.front {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #2373EC;
+  padding: 14px 26px;
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 1rem;
+  transform: translateY(-4px);
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+.user_id{
+ filter: brightness(0) invert(0) contrast(1000%) !important;
+}
+.pushable:hover {
+  filter: brightness(110%);
+}
+
+.pushable:hover .front {
+  transform: translateY(-6px);
+  transition: 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+}
+
+.pushable:hover .shadow-button {
+  transform: translateY(4px);
+}
+
+.pushable:active .front {
+  transform: translateY(-2px);
+  transition: 34ms;
+}
+
+.pushable:active .shadow-button {
+  transform: translateY(1px);
+}
+
+.pushable:focus:not(:focus-visible) {
+  outline: none;
+}
+</style>
+
+<h2 class="text text-center mb-4">사용자 세부정보</h2>
+
+<!-- USER CARD -->
+<div class="d-flex justify-content-center align-items-center">
+<div class="card mb-3 table-responsive-lg shadow " style="width: 40rem;">
+  <div class="card-body p-0">
+
+    <h2 class="text card-title p-3">   
+      <img src="{{ url_for('static', filename='user.png')}}" class="user_id" width="40" height="40">
+      {{ user.name }}
+    </h2>
+
+    <div class="name-card p-3"> 
+      <div>
+        <p><img src="{{ url_for('static', filename='id.png')}}" width="39" height="39" class="m-1">
+          <strong>{{ user.user_id }}</strong></p>
+
+        <p><img src="{{ url_for('static', filename='phone.png')}}" width="30" height="30" class="m-1">
+          <strong>{{ user.mobile }}</strong></p>
+
+        <p><img src="{{ url_for('static', filename='noted.png')}}" width="30" height="30" class="m-1">
+          <strong>{{ user.created_at }}</strong></p>
+      </div>
+
+      <div>
+        <p><img src="{{ url_for('static', filename='points.png')}}" width="30" height="30" class="m-1">
+          <strong>{{ user.points }}</strong></p>
+
+        <p><img src="{{ url_for('static', filename='Bottle.png')}}" width="30" height="30" class="m-1">
+          <strong>{{ user.bottles }} 병</strong></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+
+<h3 class="text text-center mb-4">업무</h3>
+
+
+<!-- ========================= DATE FILTERS ========================= -->
+<div class="row mb-4">
+
+  <!-- Date From -->
+  <div class="col-md-4 mb-2 ">
+    <label class="fw-bold">날짜 (From):</label>
+    <input type="date" id="dateFrom" class="form-control" onchange="filterTransactions()">
+  </div>
+
+  <!-- Date To -->
+  <div class="col-md-4 mb-3">
+    <label class="fw-bold">날짜 (To):</label>
+    <input type="date" id="dateTo" class="form-control" onchange="filterTransactions()">
+  </div>
+
+
+<div class="col-md-4 mt-3"> <button class="pushable small-download-btn mb-3 "onclick="downloadUserPDF('{{ user.user_id }}')">
+  <span class="shadow-button"></span>
+  <span class="edge"></span>
+  <span class="front">
+     <img src="/static/download.png"  width="18" height="18">
+  <span class="report-download">Download User Report
+  </span></span>
+</button></div>
+  
+<!-- </div> -->
+</div>
+
+<!-- Download button -->
+
+{% if transactions|length > 0 %}
+
+<!-- ========================= TRANSACTION TABLE ========================= -->
+<div class=" table-responsive-lg">
+<table class="table table-header" id="userTransactionsTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>유형</th>
+      <th>전철기</th>
+      <th>병</th>
+      <th>머신 ID</th>
+      <th>날짜</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for t in transactions %}
+    <tr class="{% if t.type == 'earn' %}table-success{% elif t.type == 'redeem' %}table-danger{% endif %}">
+      <td>{{ t.id }}</td>
+      <td>{{ t.type }}</td>
+      <td>{{ t.points }}</td>
+      <td>{{ t.bottles }}</td>
+      <td>{{ t.machine_id }}</td>
+      <td class="trx-date">{{ t.created_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+
+</div>
+
+
+{% else %}
+<div class="d-flex justify-content-center align-items-center flex-column">
+  <img src="{{ url_for('static', filename='Empty-cuate.png')}}" width="500" height="500" class="empty">
+  <p class="Empty fs-4">거래가 없습니다.
+</p>
+</div>
+{% endif %}
+<!-- ========================= JS FILTER LOGIC ========================= -->
+<script>
+function filterTransactions() {
+    let dateFrom = document.getElementById("dateFrom").value;
+    let dateTo = document.getElementById("dateTo").value;
+
+    let table = document.getElementById("userTransactionsTable");
+    let trs = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < trs.length; i++) { // skip header
+        let row = trs[i];
+        let dateCell = row.querySelector(".trx-date");
+        let trxDate = dateCell ? dateCell.innerText.split("T")[0] : "";
+
+        let show = true;
+
+        // Filter date from
+        if (dateFrom && trxDate < dateFrom) show = false;
+
+        // Filter date to
+        if (dateTo && trxDate > dateTo) show = false;
+
+        row.style.display = show ? "" : "none";
+    }
+}
+    function downloadUserPDF(userId) {
+
+    const rows = document.querySelectorAll("#userTransactionsTable tbody tr");
+    let filtered = [];
+
+    rows.forEach(r => {
+        if (r.style.display !== "none") {
+            const c = r.querySelectorAll("td");
+            filtered.push({
+                id: c[0].innerText,
+                type: c[1].innerText,
+                points: c[2].innerText,
+                bottles: c[3].innerText,
+                machine_id: c[4].innerText,
+                created_at: c[5].innerText
+            });
+        }
+    });
+
+    fetch(`/admin/users/${userId}/report`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ data: filtered })
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = userId + "_filtered_report.pdf";
+        a.click();
+    });
+}
+</script>
+
+{% endblock %}
+

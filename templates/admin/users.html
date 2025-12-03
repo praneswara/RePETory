@@ -1,0 +1,281 @@
+{% extends "admin/base.html" %}
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<h2 class="mb-4 text-center">사용자</h2>
+
+<!-- 🔍 SEARCH BAR -->
+ <div class="search-download">
+<input 
+    type="text"
+    id="userSearch"
+    class="form-control "
+    placeholder="🔍︎ 사용자 ID, 이름, 전화번호 검색..."
+    onkeyup="filterUsers()"
+/>
+
+<!-- 🔽 NEW SMALL + RESPONSIVE BUTTON -->
+<button class="pushable small-download-btn" onclick="downloadUsersPDF()">
+  <span class="shadow"></span>
+  <span class="edge"></span>
+  <span class="front">
+     <img src="/static/download.png"  width="18" height="18">
+  <span class="report-download">Download Report
+  </span></span>
+</button>
+
+ </div>
+
+
+<div class="table-responsive-lg">
+<table class="table custom-table" id="usersTable">
+  <thead class="header-table">
+    <tr>
+      <th>ID</th>
+      <th>이름</th>
+      <th>이동하는</th>
+      <th>전철기</th>
+      <th>병</th>
+      <th>행동</th>
+    </tr>
+  </thead>
+  <tbody class="table-body">
+    {% for user in users %}
+    <tr>
+      <td>{{ user.user_id }}</td>
+      <td>{{ user.name }}</td>
+      <td>{{ user.mobile }}</td>
+      <td>{{ user.points }}</td>
+      <td>{{ user.bottles }}</td>
+      <td>
+        <a href="{{ url_for('admin_user_detail', user_id=user.user_id) }}"
+           class="btn btn-sm border-dark border-2 rounded fw-semibold text-wrap view">
+          <img src="{{ url_for('static', filename='eye-icons.png')}}" 
+               alt="eye" width="18" height="18" class="icon-disappear">
+          보다
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+</div>
+
+<!-- 🔥 LIVE SEARCH SCRIPT -->
+<script>
+function filterUsers() {
+    let input = document.getElementById("userSearch");
+    let filter = input.value.toLowerCase();
+    let table = document.getElementById("usersTable");
+    let trs = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < trs.length; i++) {
+        let rowText = trs[i].innerText.toLowerCase();
+
+        if (rowText.includes(filter)) {
+            trs[i].style.display = "";
+        } else {
+            trs[i].style.display = "none";
+        }
+    }
+}
+
+function downloadUsersPDF() {
+
+    const rows = document.querySelectorAll("#usersTable tbody tr");
+    let filtered = [];
+
+    rows.forEach(r => {
+        if (r.style.display !== "none") {
+            const cells = r.querySelectorAll("td");
+            filtered.push({
+                user_id: cells[0].innerText,
+                name: cells[1].innerText,
+                mobile: cells[2].innerText,
+                points: cells[3].innerText,
+                bottles: cells[4].innerText
+            });
+        }
+    });
+
+    fetch("/admin/users/report", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ data: filtered })
+    })
+    .then(res => res.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "filtered_users.pdf";
+        a.click();
+    });
+}
+</script>
+
+<style>
+    .header-table th{
+       background-color:#2373EC!important;
+       color: white;
+    }
+
+    /* 🔹 Responsive row for search + button */
+    .search-download{
+      display:flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: row;
+      gap:25%;
+      margin: 2%;
+      /* flex-wrap: wrap; */
+    }
+
+    /* 🔹 Small Responsive Button */
+    .small-download-btn .front {
+        padding: 8px 20px;
+        font-size: 0.9rem;
+        display: block;
+        letter-spacing: 1px;
+        gap: 6px;
+    }
+
+    .small-download-btn img {
+        width: 30px;
+        height: 25px;
+    }
+
+.pushable {
+  position: relative;
+  background: transparent;
+  padding: 0px;
+  border: none;
+  cursor: pointer;
+  outline-offset: 4px;
+  outline-color: #2373EC;
+  transition: filter 250ms;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.shadow {
+  position: absolute;
+  inset: 0;
+  background: #86b6ff;
+  border-radius: 8px;
+  filter: blur(2px);
+  transform: translateY(2px);
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.edge {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(
+    to right,
+    #1f5ac1 0%,
+    #2373ec 8%,
+    #2373ec 92%,
+    #1c4ea3 100%
+  );
+}
+
+.front {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #2373EC;
+  padding: 14px 26px;
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 1rem;
+  transform: translateY(-4px);
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.pushable:hover {
+  filter: brightness(110%);
+}
+
+.pushable:hover .front {
+  transform: translateY(-6px);
+  transition: 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+}
+
+.pushable:hover .shadow {
+  transform: translateY(4px);
+}
+
+.pushable:active .front {
+  transform: translateY(-2px);
+  transition: 34ms;
+}
+
+.pushable:active .shadow {
+  transform: translateY(1px);
+}
+
+.pushable:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.view{
+  background-color: #2373EC!important;
+  color: #ffffff !important;
+  border: white;
+}
+.view:hover{
+  background-color: #535151!important;
+}
+
+table{
+    border-radius: 15px !important;
+    overflow: hidden !important;
+}
+
+#userSearch{
+ width:50% !important;
+ height: 40px !important;
+ border: solid black 2px;
+ border-radius: 50px !important;
+}
+
+@media only screen and (max-width: 750px) {
+.icon-disappear{
+  display: none;
+}
+}
+@media screen and (max-width: 600px) {
+ 
+
+   .report-download{
+    display: none;
+  }
+}
+
+
+.custom-table th, 
+.custom-table td {
+    border: 1px solid #000;
+    text-align: center;
+}
+
+table.custom-table tbody tr:nth-child(even) td {
+    background-color: #5da5d8 !important;
+    color: rgb(0, 0, 0) !important;
+    font-weight: 600;
+}
+
+table.custom-table tbody tr:nth-child(odd) td {
+    background-color: #ffffff !important;
+    color: black !important;
+    font-weight: 600;
+}
+</style>
+
+{% endblock %}

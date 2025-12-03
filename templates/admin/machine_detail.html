@@ -1,0 +1,395 @@
+{% extends "admin/base.html" %}
+{% block title %}Machine Detail{% endblock %}
+
+{% block content %}
+
+<h2 class="text-center">기계 세부사항 - {{ machine.name }}</h2>
+
+<!-- Machine Basic Info -->
+<div class="card mb-3 mt-3 shadow top-card">
+  <div class="card-body">
+    <!-- 🔥 PDF Hidden Metadata -->
+<span id="m-id" style="display:none">{{ machine.machine_id }}</span>
+<span id="m-name" style="display:none">{{ machine.name }}</span>
+<span id="m-city" style="display:none">{{ machine.city }}</span>
+<span id="m-lat" style="display:none">{{ machine.lat }}</span>
+<span id="m-lng" style="display:none">{{ machine.lng }}</span>
+<span id="m-current" style="display:none">{{ machine.current_bottles }}</span>
+<span id="m-max" style="display:none">{{ machine.max_capacity }}</span>
+<span id="m-total" style="display:none">{{ machine.total_bottles }}</span>
+<span id="m-full" style="display:none">{{ machine.is_full }}</span>
+<span id="m-created" style="display:none">{{ machine.created_at }}</span>
+<span id="m-emptied" style="display:none">{{ machine.last_emptied }}</span>
+
+    <div class="header-status">
+      <h2 class="text-header">
+        <img src="{{ url_for('static', filename='recycle.png')}}" width="35" height="35">
+        {{ machine.name }}
+      </h2>
+
+      <p class="btn {% if machine.is_full %}full{% else %}available{% endif %}">
+        <strong>{% if machine.is_full %}가득한{% else %}사용 가능{% endif %}</strong>
+      </p>
+    </div>
+
+    <p>
+      <img src="{{ url_for('static', filename='id.png')}}" width="30" height="30" class="m-1">
+      <strong>{{ machine.machine_id }}</strong>
+    </p>
+
+    <p>
+      <img src="{{ url_for('static', filename='building.png')}}" width="30" height="30" class="m-1">
+      <strong>{{ machine.city }}</strong>
+    </p>
+
+    <p>
+      <img src="{{ url_for('static', filename='Bottle.png')}}" width="30" height="30" class="m-1">
+      <strong>{{ machine.total_bottles }} 수집된 병</strong>
+    </p>
+
+    <p><strong> 현재 용량:</strong> {{ machine.current_bottles }} / {{ machine.max_capacity }}</p>
+
+    <div class="progress mb-3" style="height: 25px; background-color:#ccc;">
+      <div class="progress-bar {% if machine.current_bottles >= machine.max_capacity %}bg-danger{% else %}progress-meter{% endif %}"
+           role="progressbar"
+           style="width: {{ fill_percentage }}%;"
+           aria-valuenow="{{ machine.current_bottles }}"
+           aria-valuemin="0"
+           aria-valuemax="{{ machine.max_capacity }}">
+        {{ machine.current_bottles }} / {{ machine.max_capacity }}
+      </div>
+    </div>
+
+    <div class="empty-last-update">
+      <form action="{{ url_for('admin_empty_machine', machine_id=machine.machine_id) }}"
+            method="POST"
+            onsubmit="return confirm('이 기계를 비우시겠습니까?');">
+        <button type="submit" class="btn button mb-3">
+          <img src="{{ url_for('static', filename='bin.png')}}" width="25" height="25">
+          빈 기계
+        </button>
+      </form>
+
+      <p class="btn last-emptied">
+        <strong>마지막 비움: <span id="DateFormat"></span></strong>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ========================= FILTERS ========================= -->
+<h3 class="text-center fw-bold mt-5 mb-4">마지막 거래</h3>
+
+{% if transactions %}
+
+<div class="row mb-4">
+
+  <!-- Search by User ID -->
+  <div class="col-md-4 mb-2">
+    <label class="fw-bold">사용자 ID 검색:</label>
+    <input type="text" id="searchUserId" class="form-control"
+           placeholder="🔍︎ 사용자 ID..." onkeyup="filterTransactions()">
+  </div>
+
+  <!-- Date From -->
+  <div class="col-md-4 mb-2">
+    <label class="fw-bold">날짜 (From):</label>
+    <input type="date" id="dateFrom" class="form-control" onchange="filterTransactions()">
+  </div>
+
+  <!-- Date To -->
+  <div class="col-md-4 mb-2">
+    <label class="fw-bold">날짜 (To):</label>
+    <input type="date" id="dateTo" class="form-control" onchange="filterTransactions()">
+  </div>
+  
+</div>
+
+  <button class="pushable small-download-btn mb-3"onclick="downloadMachineDetailPDF()">
+  <span class="shadow-button"></span>
+  <span class="edge"></span>
+  <span class="front">
+     <img src="/static/download.png"  width="18" height="18">
+  <span class="report-download">Download Machine Report
+  </span></span>
+</button>
+<!-- ========================= TRANSACTION TABLE ========================= -->
+<div class="table-responsive-lg">
+<table class="table custom-table" id="transactionsTable">
+  <thead class="header-table">
+    <tr>
+      <th>ID</th>
+      <th>사용자 ID</th>
+      <th>유형</th>
+      <th>전철기</th>
+      <th>병</th>
+      <th>머신 ID</th>
+      <th>날짜</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for t in transactions %}
+    <tr>
+      <td>{{ t.id }}</td>
+      <td>{{ t.user_id }}</td>
+      <td>{{ t.type }}</td>
+      <td>{{ t.points }}</td>
+      <td>{{ t.bottles }}</td>
+      <td>{{ t.machine_id }}</td>
+      <td class="trx-date">{{ t.created_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% else %}
+<div class="d-flex justify-content-center align-items-center flex-column">
+  <img src="{{ url_for('static', filename='Empty-cuate.png')}}" width="500" height="500" class="empty">
+  <p class="Empty">죄송합니다..! 이 기계에 대한 거래 내역이 없습니다..</p>
+</div>
+{% endif %}
+
+
+<!-- ========================= STYLES ========================= -->
+<style>
+  .text-header{
+    color:#0066ff;
+  }
+  .top-card{
+    border: 1px solid #000;
+  }
+.progress-meter { background-color:#2373EC; color:white; font-weight:500;}
+.header-table th { background-color:#2373EC!important; color:white; }
+table { border-radius: 15px!important; overflow:hidden!important; }
+.custom-table th, .custom-table td { border:1px solid #000; text-align:center; }
+
+table.custom-table tbody tr:nth-child(even) td { background-color:#5da5d8!important; font-weight:600; }
+table.custom-table tbody tr:nth-child(odd) td { background-color:#ffffff!important; font-weight:600; }
+
+.Empty { color:#2373EC; font-size:35px; }
+.button { background-color:#ffff00!important; color:black; font-weight:600; }
+.button:hover { box-shadow:0 5px 5px rgba(0,0,0,0.6); }
+
+.text { color:#fff!important; }
+.btn.full { background-color:#ff0000; border-radius:25px; color:white;  pointer-events: none !important;  }
+.btn.available { background-color:#096709; border-radius:25px; color:white;    cursor: not-allowed;
+     pointer-events: none !important; }
+
+.header-status { display:flex; justify-content:space-between; align-items:center; }
+.btn.last-emptied { background-color:#7e7e7e; color:white; border-radius:5px;    cursor: not-allowed;
+     pointer-events: none !important;  
+    
+    }
+    .form-control{
+  border: 2px solid black !important;
+}
+.form-control:hover{
+   border: 2px solid #2373EC !important;
+}
+.empty-last-update{
+ display: flex;
+     /* align-items: start; */
+     justify-content: space-between;
+     flex-direction: row;
+     gap:30%;
+
+}
+  .small-download-btn .front {
+        padding: 8px 20px;
+        font-size: 0.9rem;
+        display: block;
+        letter-spacing: 1px;
+        gap: 6px;
+    }
+
+    .small-download-btn img {
+        width: 30px;
+        height: 25px;
+    }
+
+.pushable {
+  position: relative;
+  background: transparent;
+  padding: 0px;
+  border: none;
+  cursor: pointer;
+  outline-offset: 4px;
+  outline-color: #2373EC;
+  transition: filter 250ms;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.shadow-button {
+  position: absolute;
+  inset: 0;
+  background: #86b6ff;
+  border-radius: 8px;
+  filter: blur(2px);
+  transform: translateY(2px);
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.edge {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(
+    to right,
+    #1f5ac1 0%,
+    #2373ec 8%,
+    #2373ec 92%,
+    #1c4ea3 100%
+  );
+}
+
+.front {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #2373EC;
+  padding: 14px 26px;
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 1rem;
+  transform: translateY(-4px);
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+.user_id{
+ filter: brightness(0) invert(0) contrast(1000%) !important;
+}
+.pushable:hover {
+  filter: brightness(110%);
+}
+
+.pushable:hover .front {
+  transform: translateY(-6px);
+  transition: 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+}
+
+.pushable:hover .shadow-button {
+  transform: translateY(4px);
+}
+
+.pushable:active .front {
+  transform: translateY(-2px);
+  transition: 34ms;
+}
+
+.pushable:active .shadow-button {
+  transform: translateY(1px);
+}
+
+.pushable:focus:not(:focus-visible) {
+  outline: none;
+}
+@media(max-width:700px){
+  .empty { height:200px; width:200px; }
+  .Empty { font-size:20px; }
+  .empty-last-update{
+       flex-direction: column-reverse;
+  }
+}
+</style>
+
+
+<!-- ========================= JS LOGIC (UTC + FILTERS) ========================= -->
+<script>
+
+// Format last emptied date into UTC
+document.addEventListener("DOMContentLoaded", function () {
+    let lastEmptied = "{{ machine.last_emptied or 'N/A' }}";
+    let box = document.getElementById("DateFormat");
+
+    if (lastEmptied == "N/A") {
+        box.textContent = "N/A";
+    } else {
+        let d = new Date(lastEmptied);
+        box.textContent = d.toUTCString().replace("GMT", "").trim();
+    }
+});
+
+
+// 🔥 Live filtering for search + date range
+function filterTransactions() {
+    let userSearch = document.getElementById("searchUserId").value.toLowerCase();
+    let dateFrom = document.getElementById("dateFrom").value;
+    let dateTo = document.getElementById("dateTo").value;
+
+    let table = document.getElementById("transactionsTable");
+    let trs = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < trs.length; i++) {
+        let row = trs[i];
+        let rowText = row.innerText.toLowerCase();
+        let dateCell = row.querySelector(".trx-date");
+        let trxDate = dateCell ? dateCell.innerText.split("T")[0] : "";
+
+        let show = true;
+
+        if (userSearch && !rowText.includes(userSearch)) show = false;
+        if (dateFrom && trxDate < dateFrom) show = false;
+        if (dateTo && trxDate > dateTo) show = false;
+
+        row.style.display = show ? "" : "none";
+    }
+}
+function downloadMachineDetailPDF() {
+
+    let rows = document.querySelectorAll("#transactionsTable tbody tr");
+    let filtered = [];
+
+    rows.forEach(row => {
+        if (row.style.display !== "none") {
+            let c = row.querySelectorAll("td");
+            filtered.push({
+                id: c[0].innerText,
+                user_id: c[1].innerText,
+                type: c[2].innerText,
+                points: c[3].innerText,
+                bottles: c[4].innerText,
+                machine_id: c[5].innerText,
+                created_at: c[6].innerText
+            });
+        }
+    });
+
+    const machine = {
+        machine_id: document.getElementById("m-id").innerText,
+        name: document.getElementById("m-name").innerText,
+        city: document.getElementById("m-city").innerText,
+        lat: document.getElementById("m-lat").innerText,
+        lng: document.getElementById("m-lng").innerText,
+        current: document.getElementById("m-current").innerText,
+        max: document.getElementById("m-max").innerText,
+        total: document.getElementById("m-total").innerText,
+        full: document.getElementById("m-full").innerText,
+        created_at: document.getElementById("m-created").innerText,
+        last_emptied: document.getElementById("m-emptied").innerText
+    };
+
+    fetch(`/admin/machines/${machine.machine_id}/report-filtered`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ machine, transactions: filtered })
+    })
+    .then(res => res.blob())
+    .then(blob => {
+        let url = window.URL.createObjectURL(blob);
+        let a = document.createElement("a");
+        a.href = url;
+        a.download = `${machine.machine_id}_filtered_report.pdf`;
+        a.click();
+    });
+}
+
+</script>
+
+{% endblock %}
+

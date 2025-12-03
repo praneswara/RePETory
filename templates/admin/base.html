@@ -1,0 +1,119 @@
+<!-- UPDATED CODE -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo-1.png') }}">
+  <title>{% block title %}Admin Panel{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- <title>Responsive Navbar</title> -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body{
+      background-color: rgb(255, 255, 255);
+    }
+    .card-style{
+      background-color: rgb(162, 242, 238);      
+      max-width: 300px;
+      min-height:300px ;
+      border-radius: 5%;
+      box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.3);
+    }
+    .navbar-custom {
+      margin: 2%;
+      border-radius: 0px 80px 0px 60px; 
+      background-color: #2373EC;  
+      box-shadow: 0 0 6px #006d71;
+    }
+    .navbar-custom .nav-link {
+      color: rgb(255, 255, 255);
+      font-weight: 500;
+      margin-right: 1rem;
+    }
+    .navbar-custom .nav-link:hover {
+      text-decoration: underline;
+    }
+    .navbar-custom .navbar-toggler {
+      border: none;
+      color: white;
+    }
+   
+    @media only screen and (max-width: 750px) {
+      .card-style{
+         max-width: 600px;
+      min-height:300px ;
+      }
+      .navbar-custom{
+        width: 100%;
+      }
+    }
+   .navbar-custom {
+  position: absolute;   
+  top: 0;
+  left: 2%;
+  width: 90%;
+  z-index: 1000;       
+   }
+.navbar-toggler {
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+.navbar-toggler:focus,
+.navbar-toggler:hover,
+.navbar-toggler:active {
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+@media only screen and (max-width: 700px) {
+ .nav-link{
+    padding:4px;
+}
+ } 
+
+ .navbar-toggler-icon {
+    filter: brightness(0) invert(1);  
+}
+  </style>
+</head>
+<body  style="padding-top: 100px;">
+
+<nav class="navbar navbar-expand-lg navbar-custom py-3 ">
+  <div class="container">
+        <h3 class="text text-light">관리자 패널</h3>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon "></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_dashboard') }}">계기반</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_users') }}">사용자</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_machines') }}">기계</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/transactions">거래</a></li>
+        <li class="nav-item"><a class="nav-link text-danger" href="{{ url_for('admin_login') }}">로그아웃</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="container mt-4 ">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</body>
+</html>
+
+
+

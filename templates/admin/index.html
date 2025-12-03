@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo-1.png') }}">
+     <title>PolyGreen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2373EC;
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #333;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgb(255, 255, 255);
+            backdrop-filter: blur(10px);
+            overflow: visible; 
+}
+
+/* Wavy bottom border */
+            header::after {
+                content: "";
+                position: absolute;
+                top: 80px;
+                left: 0;
+                width: 100%;
+                height: 78px;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,50 Q150,10 300,50 T600,50 T900,50 T1200,50 L1200,120 L0,120 Z' fill='rgb(255,255,255)'/%3E%3C/svg%3E");
+                background-size: 100% 100%;
+                background-repeat: no-repeat;
+                display: block;
+                transform: rotate(180deg);
+            }
+        .logo {
+            width: 120px;
+            height: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        /* Admin Button */
+        .admin-btn {
+            width: 140px;
+            height: 50px;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            background: #000000;
+            cursor: pointer;
+            position: relative;
+            z-index: 0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .admin-btn::before {
+                    content: '';
+            background: linear-gradient(45deg, #2373EC, #2373EC, #2373EC, #2373EC, #2373EC, #2373EC, #2373EC, #2373EC);
+            /* background-color: #0066ff; */
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            background-size: 400%;
+            z-index: -1;    
+            filter: blur(5px);
+            width: calc(100% + 4px);
+            height: calc(100% + 4px);
+            animation: glowing 20s linear infinite;
+            opacity: 1;
+            border-radius: 10px;
+        }
+
+        .admin-btn::after {
+            z-index: -1;
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #2e2a2a;
+            left: 0;
+            top: 0;
+            border-radius: 10px;
+        }
+
+        .admin-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .admin-btn:active {
+            color: #000;
+        }
+
+        .admin-btn:active::after {
+            background: transparent;
+        }
+
+        @keyframes glowing {
+            0% { background-position: 0 0; }
+            50% { background-position: 400% 0; }
+            100% { background-position: 0 0; }
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 100px 5% 50px;
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.8s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero p {
+            font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+            color: #ffffff;
+            max-width: 700px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            animation: slideUp 0.8s ease 0.2s backwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: slideUp 0.8s ease 0.4s backwards;
+        }
+
+        .cta-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+       
+
+        /* Cards Section */
+        .cards-section {
+            padding: 80px 5%;
+           
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: #ffffff;
+            margin-bottom: 60px;
+            font-weight: 700;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+          
+            background-color: rgb(255, 255, 255);
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
+            opacity: 0;
+            transform: translateY(50px);
+            backdrop-filter: blur(10px);
+        }
+
+        .card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            color: #2373EC;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .card p {
+            font-size: 1rem;
+                      color: #000;
+
+            line-height: 1.6;
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 80px 5%;
+         
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        .feature-card.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .feature-card:hover {
+            background: white;
+            transform: scale(1.05);
+        }
+
+        .feature-icon {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h4 {
+            font-size: 1.3rem;
+            color: #2373EC;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 1% 1%;
+            text-align: center;
+            background: rgb(255, 255, 255);
+            color: rgb(17, 12, 12);
+        }
+
+        footer p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+  .img-icon{
+              height: 100px;
+              width: 100px;
+            }
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 5%;
+            }
+
+            .logo {
+                width: 90px;
+            }
+
+            .admin-btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            .hero {
+                padding: 80px 5% 40px;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .cta-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo {
+                width: 70px;
+            }
+
+            .admin-btn {
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+
+            .card {
+                padding: 30px 20px;
+            }
+          
+        }
+    
+
+    </style>
+</head>
+<body>
+    <header>
+        <img src="/static/Poly-green-logo.png" alt="PoyGreen Logo" class="logo">
+        <a href="/admin/login" class="admin-btn">관리자 로그인</a>
+    </header>
+
+    <section class="hero">
+        <h1>Welcome to PolyGreen</h1>
+        <p>플라스틱 쓰레기를 보상으로 바꿔보세요. 저희의 역회전 자판기는 재활용을 쉽고, 보람 있고, 즐겁게 만들어 줍니다. 지금 바로 녹색 혁명에 동참하세요!</p>
+        <div class="hero-cta">
+           
+        </div>
+    </section>
+
+    <section class="cards-section">
+        <h2 class="section-title">작동 방식</h2>
+        <div class="cards-container">
+            <div class="card">
+                <span class="card-icon"><img src="/static/user.png" class="img-icon" alt="user"></span>
+                <h3>사용자 관리</h3>
+                <p>계정을 만들고 친환경 여정을 시작하세요. 기여 내역을 확인하고 재활용하는 모든 병에 대한 보상을 받으세요.</p>
+            </div>
+            <div class="card">
+                <span class="card-icon"><img src="/static/vending-machine.png"class="img-icon" alt="machine"></span>
+                <h3>기계 위치</h3>
+                <p>
+가까운 PoyGreen 역방향 자판기를 찾아보세요. 도시 전역의 쇼핑몰, 상점, 공공장소에 편리하게 위치해 있습니다.</p>
+            </div>
+            <div class="card">
+                <span class="card-icon"><img src="/static/transaction.png" class="img-icon" alt="transaction"></span>
+                <h3>
+거래 세부정보</h3>
+                <p>전체 재활용 내역, 적립된 리워드, 그리고 환경에 미치는 영향을 확인하세요. 모든 병은 더 깨끗한 지구를 위해 소중하게 쓰입니다.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="features-section">
+        <h2 class="section-title">
+왜 PolyGreen을 선택해야 할까요?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><img src="/static/recycle.png" class="img-icon" alt="point"></div>
+                <h4>친환경</h4>
+                <p>플라스틱 폐기물을 줄이고 지속 가능한 미래에 기여하세요</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><img src="/static/points.png" class="img-icon" alt="point"></div>
+                <h4>
+보상 획득</h4>
+                <p>재활용하는 모든 병에 대해 포인트와 보상을 받으세요</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><img src="/static/noted.png" class="img-icon" alt="point"></div>
+                <h4>
+사용하기 쉬움</h4>
+                <p>
+실시간 추적 및 업데이트가 가능한 간단한 인터페이스</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><img src="/static/earth.png" class="img-icon" alt="point"></div>
+                <h4>영향을 미치다</h4>
+                <p>
+귀하의 모든 행동으로 환경 기여가 커지는 것을 지켜보세요</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 PolyGreen. All rights reserved. Building a greener tomorrow, one bottle at a time.</p>
+    </footer>
+
+    <script>
+        // Smooth scroll reveal animation
+        const observerOptions = {
+            threshold: 0.2,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, index * 100);
+                }
+            });
+        }, observerOptions);
+
+        // Observe all cards
+        document.querySelectorAll('.card').forEach(card => {
+            observer.observe(card);
+        });
+
+        // Observe feature cards
+        document.querySelectorAll('.feature-card').forEach(card => {
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

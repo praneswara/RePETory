@@ -1,0 +1,95 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-4 text-center">계기반</h2>
+
+<style>
+  .clickable-card {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  .clickable-card:hover {
+    transform: scale(1.03);
+  }
+  .card-title{
+    color:#2373EC;
+  }
+  .card-style{
+    background: #f6f8fa !important;
+  }
+  .logo-color{
+      filter: brightness(0) saturate(100%) invert(32%) sepia(96%) saturate(2287%) hue-rotate(204deg) brightness(94%) contrast(95%);
+  }
+  .counter{
+    color:#2373EC;
+  }
+</style>
+
+<div class="row box">
+
+  <!-- USERS CARD -->
+  <div class="col-md-4">
+    <div class="card text-center card-style mb-3 clickable-card"
+         onclick="window.location='/admin/users'"
+         style=" border: 4px solid #2373EC;">
+         <div class="card-body d-flex justify-content-center align-items-center flex-column">
+        <img src="{{ url_for('static', filename='users.png')}}" width="70" height="70" class="mb-2  logo-color">
+        <h5 class="card-title">총 사용자</h5>
+        <p class="display-4 fw-semibold counter" data-target="{{ stats.total_users }}">0</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MACHINES CARD -->
+  <div class="col-md-4">
+    <div class="card text-center card-style mb-3 clickable-card"
+         onclick="window.location='/admin/machines'"
+         style="background: linear-gradient(180deg, white, #a8ffe8); border: 4px solid #2373EC;">
+         <div class="card-body d-flex justify-content-center align-items-center flex-column">
+        <img src="{{ url_for('static', filename='vending-machine.png')}}" width="70" height="70" class="mb-3  logo-color">
+        <h5 class="card-title">총 기계</h5>
+        <p class="display-4 fw-semibold counter" data-target="{{ stats.total_machines }}">0</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS CARD -->
+  <div class="col-md-4">
+    <div class="card text-center card-style mb-3 clickable-card"
+        onclick="window.location='/admin/transactions'" style="background: linear-gradient(180deg, white, #a8ffe8); border: 4px solid #2373EC;">
+        <div class="card-body d-flex justify-content-center align-items-center flex-column">
+        <img src="{{ url_for('static', filename='transaction.png')}}" width="70" height="70" class="mb-3 logo-color">
+        <h5 class="card-title">총 거래</h5>
+        <p class="display-4 fw-semibold counter" data-target="{{ stats.total_transactions }}">0</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+  const counters = document.querySelectorAll('.counter');
+  const speed = 100;
+
+  counters.forEach(counter => {
+    const animate = () => {
+      const value = +counter.getAttribute('data-target');
+      const data = +counter.innerText;
+      const increment = value / speed;
+
+      if (data < value) {
+        counter.innerText = Math.ceil(data + increment);
+        setTimeout(animate, 80);
+      } else {
+        counter.innerText = value;
+      }
+    };
+    animate();
+  });
+</script>
+
+{% endblock %}
+
+
