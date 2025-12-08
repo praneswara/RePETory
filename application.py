@@ -1517,7 +1517,7 @@ def fetchuser():
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT user_id, name, mobile, points FROM users WHERE mobile=%s",
+                "SELECT user_id, name, mobile, bottles, points FROM users WHERE mobile=%s",
                 (mobile,)
             )
             u = cur.fetchone()
@@ -1529,7 +1529,8 @@ def fetchuser():
         user_id=u["user_id"],
         name=u["name"],
         mobile=u["mobile"],
-        points=u["points"]
+        points=u["points"],
+        bottles=u["bottles"]
     ), 200
 
 
