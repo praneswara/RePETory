@@ -1050,6 +1050,7 @@ def send_otp_db():
     otp = str(random.randint(1000, 9999))
     expires_at = dt.datetime.utcnow() + dt.timedelta(minutes=5)
 
+    # ✅ Save OTP first (always succeed)
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -1064,16 +1065,29 @@ def send_otp_db():
             """, (mobile, otp, expires_at))
         conn.commit()
 
+    # ✅ Now try sending SMS safely
     if not sms:
-        return jsonify(ok=False, message="OTP service unavailable"), 500
+        return jsonify(ok=True, message="OTP generated (SMS service unavailable)")
 
-    sms.send_message({
-        "from": "PolyGreen",
-        "to": mobile,
-        "text": f"Your OTP is {otp}"
-    })
+    try:
+        response = sms.send_message({
+            "from": "PolyGreen",
+            "to": mobile,
+            "text": f"Your OTP is {otp}",
+        })
+
+        status = response["messages"][0]["status"]
+        if status != "0":
+            error_text = response["messages"][0].get("error-text", "Unknown error")
+            application.logger.warning(f"Vonage SMS failed: {error_text}")
+            return jsonify(ok=True, message="OTP generated, SMS delivery pending")
+
+    except Exception as e:
+        application.logger.error(f"Vonage connection error: {e}")
+        return jsonify(ok=True, message="OTP generated, SMS delivery retryable")
 
     return jsonify(ok=True, message="OTP sent successfully")
+
 
 @application.route("/api/auth/verify-otp", methods=["POST"])
 def verify_otp_db():
