@@ -1026,74 +1026,144 @@ def api():
 
 # ------------------- AUTHENTICATION ENDPOINTS-------------------------
 # ------------------ OTP STORE ------------------
-otp_store = {}
 
-@application.route("/send_otp", methods=["POST"])
-def send_otp():
+@application.route("/api/auth/check-user", methods=["POST"])
+def check_user():
     data = request.get_json() or {}
-    mobile = str(data.get("mobile"))
+    mobile = str(data.get("mobile", "")).strip()
 
-    if not mobile:
-        return jsonify({"ok": False, "error": "mobile is required"}), 400
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT user_id FROM users WHERE mobile=%s", (mobile,))
+            exists = cur.fetchone() is not None
 
-    # ---------------- SAFETY CHECK ----------------
+    return jsonify(ok=True, exists=exists)
+
+@application.route("/api/auth/send-otp", methods=["POST"])
+def send_otp_db():
+    data = request.get_json() or {}
+    mobile = str(data.get("mobile", "")).strip()
+
+    if not (mobile.isdigit() and 8 <= len(mobile) <= 15):
+        return jsonify(ok=False, message="Invalid mobile number"), 400
+
+    otp = str(random.randint(1000, 9999))
+    expires_at = dt.datetime.utcnow() + dt.timedelta(minutes=5)
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO user_otps (mobile, otp, expires_at, verified, updated_at)
+                VALUES (%s, %s, %s, FALSE, NOW())
+                ON CONFLICT (mobile)
+                DO UPDATE SET
+                    otp = EXCLUDED.otp,
+                    expires_at = EXCLUDED.expires_at,
+                    verified = FALSE,
+                    updated_at = NOW()
+            """, (mobile, otp, expires_at))
+        conn.commit()
+
     if not sms:
-        return jsonify({"ok": False, "error": "OTP service not available (Vonage keys missing)."}), 500
+        return jsonify(ok=False, message="OTP service unavailable"), 500
 
-    # ---------------- GENERATE OTP ----------------
-    otp = random.randint(1000, 9999)
+    sms.send_message({
+        "from": "PolyGreen",
+        "to": mobile,
+        "text": f"Your OTP is {otp}"
+    })
 
-    otp_store[mobile] = {
-        "otp": otp,
-        "expires": time.time() + 300  # 5 minutes
-    }
+    return jsonify(ok=True, message="OTP sent successfully")
 
-    # ---------------- SEND SMS ----------------
-    try:
-        responseData = sms.send_message({
-            "from": "Vonage",
-            "to": mobile,
-            "text": f"Your OTP is {otp}",
-        })
-
-        status = responseData["messages"][0]["status"]
-
-        if status == "0":
-            return jsonify({"ok": True, "message": "OTP sent successfully"})
-
-        error_text = responseData["messages"][0].get("error-text", "Unknown error")
-        return jsonify({"ok": False, "error": error_text})
-
-    except Exception as e:
-        return jsonify({"ok": False, "error": f"SMS error: {str(e)}"}), 500
-
-
-
-@application.route("/verify_otp", methods=["POST"])
-def verify_otp():
+@application.route("/api/auth/verify-otp", methods=["POST"])
+def verify_otp_db():
     data = request.get_json() or {}
-    mobile = data.get("mobile")
-    otp = data.get("otp")
+    mobile = str(data.get("mobile", "")).strip()
+    otp = str(data.get("otp", "")).strip()
 
-    if not mobile or not otp:
-        return jsonify({"ok": False, "error": "phone and otp required"}), 400
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT otp, expires_at, verified
+                FROM user_otps
+                WHERE mobile=%s
+            """, (mobile,))
+            row = cur.fetchone()
 
-    if mobile not in otp_store:
-        return jsonify({"ok": False, "error": "OTP expired or not found"}), 400
+            if not row:
+                return jsonify(ok=False, message="OTP not found"), 400
 
-    record = otp_store[mobile]
+            if row["verified"]:
+                return jsonify(ok=False, message="OTP already used"), 400
 
-    # ---------------- EXPIRATION CHECK ----------------
-    if time.time() > record["expires"]:
-        del otp_store[mobile]
-        return jsonify({"ok": False, "error": "OTP expired"}), 400
+            if dt.datetime.utcnow() > row["expires_at"]:
+                return jsonify(ok=False, message="OTP expired"), 400
 
-    # ---------------- MATCH CHECK ----------------
-    if str(record["otp"]) == str(otp):
-        del otp_store[mobile]
-        return jsonify({"ok": True, "message": "OTP verified"})
+            if row["otp"] != otp:
+                return jsonify(ok=False, message="Invalid OTP"), 400
 
-    return jsonify({"ok": False, "error": "Incorrect OTP"}), 400
+            cur.execute("""
+                UPDATE user_otps SET verified=TRUE WHERE mobile=%s
+            """, (mobile,))
+        conn.commit()
+
+    return jsonify(ok=True, message="OTP verified")
+
+@application.route("/api/auth/set-new-password", methods=["POST"])
+def set_new_password():
+    data = request.get_json() or {}
+    mobile = str(data.get("mobile", "")).strip()
+    new_password = data.get("new_password", "").strip()
+
+    if not new_password:
+        return jsonify(ok=False, message="Password required"), 400
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT verified FROM user_otps
+                WHERE mobile=%s
+            """, (mobile,))
+            otp_row = cur.fetchone()
+
+            if not otp_row or not otp_row["verified"]:
+                return jsonify(ok=False, message="OTP not verified"), 400
+
+            new_hash = bcrypt.hash(new_password)
+
+            cur.execute("""
+                UPDATE users SET password_hash=%s WHERE mobile=%s
+            """, (new_hash, mobile))
+
+            cur.execute("DELETE FROM user_otps WHERE mobile=%s", (mobile,))
+        conn.commit()
+
+    return jsonify(ok=True, message="Password reset successful")
+
+@application.route("/api/auth/reset-password", methods=["POST"])
+@jwt_required()
+def reset_password_loggedin():
+    uid = get_jwt_identity()
+    data = request.get_json() or {}
+
+    old_password = data.get("old_password", "").strip()
+    new_password = data.get("new_password", "").strip()
+
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT password_hash FROM users WHERE user_id=%s", (uid,))
+            user = cur.fetchone()
+
+            if not user or not bcrypt.verify(old_password[:72], user["password_hash"]):
+                return jsonify(ok=False, message="Incorrect password"), 401
+
+            new_hash = bcrypt.hash(new_password)
+            cur.execute("""
+                UPDATE users SET password_hash=%s WHERE user_id=%s
+            """, (new_hash, uid))
+        conn.commit()
+
+    return jsonify(ok=True, message="Password updated")
 
 
 #--------------------------REGISTER API--------------------------------
@@ -1370,128 +1440,6 @@ def list_machines():
         })
 
     return jsonify(items=out)
-
-
-@application.route("/api/auth/forgot-password/start", methods=["POST"])
-def forgot_password_start():
-    data = request.get_json() or {}
-    mobile = str(data.get("mobile", "")).strip()
-
-    if not (mobile and mobile.isdigit()):
-        return jsonify(ok=False, message="Invalid mobile number"), 400
-
-    # Check user exists
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT user_id FROM users WHERE mobile=%s", (mobile,))
-            user = cur.fetchone()
-
-    if not user:
-        return jsonify(ok=False, message="User not found"), 404
-
-    # Create OTP
-    otp = random.randint(1000, 9999)
-
-    otp_store[mobile] = {
-        "otp": otp,
-        "expires": time.time() + 300,  # 5 min
-    }
-
-    # Send SMS
-    responseData = sms.send_message({
-        "from": "Vonage",
-        "to": mobile,
-        "text": f"Your PolyGreen password reset OTP is {otp}",
-    })
-
-    status = responseData["messages"][0]["status"]
-
-    if status == "0":
-        return jsonify(ok=True, message="OTP sent successfully")
-    else:
-        return jsonify(ok=False, error=responseData["messages"][0]["error-text"]), 500
-
-
-@application.route("/api/auth/forgot-password/verify-otp", methods=["POST"])
-def forgot_password_verify_otp():
-    data = request.get_json() or {}
-    mobile = str(data.get("mobile", "")).strip()
-    otp = str(data.get("otp", "")).strip()
-
-    if mobile not in otp_store:
-        return jsonify(ok=False, message="OTP expired or not found"), 400
-
-    record = otp_store[mobile]
-
-    if time.time() > record["expires"]:
-        return jsonify(ok=False, message="OTP expired"), 400
-
-    if str(record["otp"]) != otp:
-        return jsonify(ok=False, message="Incorrect OTP"), 400
-
-    return jsonify(ok=True, message="OTP verified")
-
-
-@application.route("/api/auth/forgot-password/set-new-password", methods=["POST"])
-def forgot_password_set_new():
-    data = request.get_json() or {}
-    mobile = str(data.get("mobile", "")).strip()
-    new_password = data.get("new_password", "").strip()
-
-    if not (mobile and new_password):
-        return jsonify(ok=False, message="Missing fields"), 400
-
-    new_hash = bcrypt.hash(new_password)
-
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "UPDATE users SET password_hash=%s WHERE mobile=%s",
-                (new_hash, mobile)
-            )
-        conn.commit()
-    del otp_store[mobile]
-
-    return jsonify(ok=True, message="Password reset successfully")
-
-
-@application.route("/api/auth/reset-password", methods=["POST"])
-@jwt_required()
-def reset_password():
-    uid = get_jwt_identity()
-
-    data = request.get_json() or {}
-    current_password = data.get("current_password", "").strip()
-    new_password = data.get("new_password", "").strip()
-
-    if not (current_password and new_password):
-        return jsonify(message="current_password and new_password required"), 400
-
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM users WHERE user_id=%s", (uid,))
-            user = cur.fetchone()
-
-            if not user:
-                return jsonify(message="User not found"), 404
-
-            # bcrypt 72-byte safety
-            current_password_truncated = current_password[:72]
-
-            if not bcrypt.verify(current_password_truncated, user["password_hash"]):
-                return jsonify(message="Incorrect current password"), 401
-
-            new_hash = bcrypt.hash(new_password)
-
-            cur.execute(
-                "UPDATE users SET password_hash=%s WHERE user_id=%s",
-                (new_hash, uid)
-            )
-
-        conn.commit()
-
-    return jsonify(message="Password updated successfully"), 200
-
 
 
 # --------------------- MACHINE ENDPOINTS --------------------------------------------------
