@@ -1031,10 +1031,10 @@ otp_store = {}
 @application.route("/send_otp", methods=["POST"])
 def send_otp():
     data = request.get_json() or {}
-    phone = data.get("phone")
+    mobile = str(data.get("mobile"))
 
-    if not phone:
-        return jsonify({"ok": False, "error": "phone is required"}), 400
+    if not mobile:
+        return jsonify({"ok": False, "error": "mobile is required"}), 400
 
     # ---------------- SAFETY CHECK ----------------
     if not sms:
@@ -1043,7 +1043,7 @@ def send_otp():
     # ---------------- GENERATE OTP ----------------
     otp = random.randint(1000, 9999)
 
-    otp_store[phone] = {
+    otp_store[mobile] = {
         "otp": otp,
         "expires": time.time() + 300  # 5 minutes
     }
@@ -1052,7 +1052,7 @@ def send_otp():
     try:
         responseData = sms.send_message({
             "from": "Vonage",
-            "to": phone,
+            "to": mobile,
             "text": f"Your OTP is {otp}",
         })
 
@@ -1072,25 +1072,25 @@ def send_otp():
 @application.route("/verify_otp", methods=["POST"])
 def verify_otp():
     data = request.get_json() or {}
-    phone = data.get("phone")
+    mobile = data.get("mobile")
     otp = data.get("otp")
 
-    if not phone or not otp:
+    if not mobile or not otp:
         return jsonify({"ok": False, "error": "phone and otp required"}), 400
 
-    if phone not in otp_store:
+    if mobile not in otp_store:
         return jsonify({"ok": False, "error": "OTP expired or not found"}), 400
 
-    record = otp_store[phone]
+    record = otp_store[mobile]
 
     # ---------------- EXPIRATION CHECK ----------------
     if time.time() > record["expires"]:
-        del otp_store[phone]
+        del otp_store[mobile]
         return jsonify({"ok": False, "error": "OTP expired"}), 400
 
     # ---------------- MATCH CHECK ----------------
     if str(record["otp"]) == str(otp):
-        del otp_store[phone]
+        del otp_store[mobile]
         return jsonify({"ok": True, "message": "OTP verified"})
 
     return jsonify({"ok": False, "error": "Incorrect OTP"}), 400
@@ -1395,7 +1395,6 @@ def forgot_password_start():
     otp_store[mobile] = {
         "otp": otp,
         "expires": time.time() + 300,  # 5 min
-        "verified": False
     }
 
     # Send SMS
@@ -1430,8 +1429,6 @@ def forgot_password_verify_otp():
     if str(record["otp"]) != otp:
         return jsonify(ok=False, message="Incorrect OTP"), 400
 
-    otp_store[mobile]["verified"] = True
-
     return jsonify(ok=True, message="OTP verified")
 
 
@@ -1454,7 +1451,7 @@ def forgot_password_set_new():
             )
         conn.commit()
 
-    del otp_store[int(mobile)]
+    del otp_store[mobile]
 
     return jsonify(ok=True, message="Password reset successfully")
 
