@@ -1444,9 +1444,6 @@ def forgot_password_set_new():
     if not (mobile and new_password):
         return jsonify(ok=False, message="Missing fields"), 400
 
-    if mobile not in otp_store or otp_store[mobile].get("verified") != True:
-        return jsonify(ok=False, message="OTP not verified"), 401
-
     new_hash = bcrypt.hash(new_password)
 
     with get_db() as conn:
