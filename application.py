@@ -1454,7 +1454,7 @@ def forgot_password_set_new():
             )
         conn.commit()
 
-    del otp_store[mobile]
+    del otp_store[int(mobile)]
 
     return jsonify(ok=True, message="Password reset successfully")
 
