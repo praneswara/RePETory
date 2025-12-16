@@ -192,6 +192,9 @@ def admin_required(f):
 def home():
     return render_template("admin/index.html")
 
+@application.route('/policy')
+def policy():
+    return render_template("admin/policy.html")
 # ---------------------- ADMIN LOGIN ------------------------------
 
 @application.route("/admin/login", methods=["GET", "POST"])
