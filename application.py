@@ -195,6 +195,10 @@ def home():
 @application.route('/policy')
 def policy():
     return render_template("admin/policy.html")
+
+@application.route('/delete-account')
+def delete_account():
+    return render_template("admin/delete_account.html")
 # ---------------------- ADMIN LOGIN ------------------------------
 
 @application.route("/admin/login", methods=["GET", "POST"])
